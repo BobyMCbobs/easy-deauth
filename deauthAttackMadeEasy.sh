@@ -1,13 +1,39 @@
 #!/bin/bash
 
 #
-# deauthAttackMadeEasy v1
+# deauthAttackMadeEasy v1.1
 #
 
 configLocation=".deauthAttack.config"
 
 echo "Welcome to the siiiimplist way to deauth WAPs!"
 sleep 0.1
+
+function checkRequirements() {
+#install requirements
+if [ ! -f /sbin/ifconfig ] || [ ! -f /usr/bin/aircrack-ng ]
+then
+	echo "It seams that you don't have one of the required packages for this script installed:"
+	echo "net-tools (ifconfig), or aircrack-ng (airmon-ng)."
+	echo "Would you like me to install the packages?"
+	echo "[y/N] "
+
+	read optionForRequirements
+
+	if [ $optionForRequirements = "y" ]
+	then
+		sudo apt install -y net-tools aircrack-ng
+		echo $'\nPackages installed\n'
+
+	elif [ $optionForRequirements = "n" ]
+	then
+		echo "Exiting"
+		exit
+	fi
+
+fi
+
+}
 
 function checkInterfaces() {
 #display network interfaces
@@ -24,6 +50,7 @@ for i in $( ifconfig -a -s | cut -f1 -d' '  | sed -e 's/Iface//g' | sed -e 's/lo
 
 done
 
+echo "[Q/e]: Quit/Exit"
 echo -n $'\nPlease select your Wireless Interface:\n'
 read wifdr
 
@@ -34,6 +61,11 @@ then
 else
 	wifd=$(echo $wifdr)
 
+fi
+
+if [ $wifdr = "q" ] || [ $wifdr = "Q" ] || [ $wifdr = "e" ] || [ $wifdr = "E" ]
+then
+	exit
 fi
 
 useInterface
@@ -250,4 +282,5 @@ exit
 }
 
 #Initalise program
+checkRequirements
 checkInterfaces
