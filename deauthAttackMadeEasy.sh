@@ -2,6 +2,9 @@
 
 #
 # deauthAttackMadeEasy v1.2
+# Project by github.com/BobyMCBobs
+#
+# Licensed until GPL2
 #
 
 configLocation=".deauthAttack.config"
