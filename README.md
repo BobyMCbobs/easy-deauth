@@ -37,3 +37,4 @@ Help: `getnewip -h`
 ##### Notes
 - This has been testing on GNU/Linux distributions: Arch Linux, Debian (9.x), and Ubuntu (16.04, 18.04).  
 - Building a debian package requires 'build-essential'.
+- Main repository is on [GitLab](https://gitlab.com/BobyMCbobs/easy-deauth). There is a [GitHub](https://github.com/BobyMCbobs/easy-deauth) mirror.
