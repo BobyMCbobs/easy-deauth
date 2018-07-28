@@ -1,16 +1,16 @@
-Name:           getnewip
-Version:        2.2
+Name:           easy-deauth
+Version:        1.1
 Release:        1%{?dist}
-Summary:        Sync dynamic public IP address of GNU/Linux servers with the hostname in a user's SSH config, via Dropbox.
+Summary:        Send deauth packages to your favourite devices on your private WiFi network.
 BuildArch:	noarch
 License:        GPLv3
 URL:            https://gitlab.com/BobyMCbobs/%{name}
 Source0:        https://gitlab.com/BobyMCbobs/%{name}/-/archive/%{version}/%{name}-%{version}.zip
-Requires:       bash, netcat-openbsd, curl, openssh
+Requires:       net-tools, aircrack-ng
 
 
 %description
-Sync dynamic public IP address of GNU/Linux servers with the hostname in a user's SSH config via Dropbox.
+Send deauth packages to your favourite devices on your private WiFi network.
 
 
 %prep
@@ -25,23 +25,6 @@ Sync dynamic public IP address of GNU/Linux servers with the hostname in a user'
 %license LICENSE
 %doc README.md
 /usr/bin/%{name}
-/usr/share/bash-completion/completions/%{name}
-/etc/systemd/system/%{name}.service
-/etc/%{name}/%{name}-blank.conf
-/etc/%{name}/%{name}-settings.conf
-
-
-%preun
-systemctl disable getnewip
-systemctl stop getnewip
-
-
-%post
-mkdir -p /etc/getnewip/units
-
-
-%postun
-rm -rf /etc/getnewip
 
 
 %changelog
