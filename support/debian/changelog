@@ -1,0 +1,6 @@
+easy-deauth (1.1) bionic; urgency=medium
+
+  * Made packagable
+  * Refined source code
+
+ -- Caleb Woodbine <calebwoodbine.public@gmail.com>  Fri, 27 Jul 2018 20:30:00 +1200

