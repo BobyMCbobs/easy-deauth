@@ -7,5 +7,5 @@ Build-Depends: debhelper (>= 9)
 
 Package: easy-deauth
 Architecture: all
-Depends: net-tools, aircrack-ng
+Depends: aircrack-ng
 Description: Send deauth packages to your favourite devices on your private WiFi network!

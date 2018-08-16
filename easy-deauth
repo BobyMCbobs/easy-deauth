@@ -68,22 +68,31 @@ fi
 
 function getInterfaces() {
 # user selects list of interfaces
+devNetNum=0
 
 echo 'Please choose one of the available interfaces from this list:'
 
-for i in $(ifconfig -a -s | cut -f1 -d' '  | sed -e 's/Iface//g' | sed -e 's/lo//g' | sed '/^\s*$/d'); do
-	[ -d /sys/class/net/$i/wireless ] && probablyWireless="<-- Possibly a wireless interface." || probablyWireless=""
+networkDevices=$(command ls /sys/class/net | sed -e 's/lo//g' | sed '/^\s*$/d')
+for i in $networkDevices; do
+	[ -d /sys/class/net/$i/wireless ] && probablyWireless="<-- Possibly a wireless interface." || probablyWireless="<-- Not a wireless interface."
 	devNetNum=$((devNetNum + 1))
 	echo "[$devNetNum]: $i	$probablyWireless"
-
 done
+
+[ "$devNetNum" = 0 ] && echo "No interfaces available..." && exit
 
 echo "[Q/e]: Quit/Exit"
 read -r -p 'Please select your Wireless Interface: ' wifdr
 
 if [[ $wifdr =~ ^-?[0-9]+$ ]]
 then
-	wifd=$(ifconfig -a -s | cut -f1 -d' ' | sed -e 's/Iface//g' | sed -e 's/lo//g' | sed '/^\s*$/d' | sed "${wifdr}p;d")
+	[ "$wifdr" -gt  "$devNetNum" ] && echo "'$devNetNum' is not available." && getInterfaces
+	networkDevicesLn=""
+	for i in $networkDevices
+	do
+		networkDevicesLn="$networkDevicesLn\n$i"
+	done
+	wifd=$(echo -e "$networkDevicesLn" | sed '/^\s*$/d' | sed "${wifdr}p;d")
 
 else
 	wifd="$wifdr"
@@ -97,8 +106,8 @@ case "$wifdr" in
 esac
 
 mon="mon"
-echo "Note: if you choose to prematurely quit easy-deauth, you'll need to disable monitor mode."
-echo "To do so: '"$sudoProg" airmon-ng stop $wifd$mon'"
+echo "Note: Although when easy-deauth finishes it will automatically reconfigure your interfaces, if it doesn't for whatever reason you'll need to disable monitor mode."
+echo "To do so manually: '"$sudoProg" airmon-ng stop $wifd$mon'"
 read -r -p "Are you sure you want to use this interface? [y|*] " cont
 case $cont in
 	"y"|"Y")

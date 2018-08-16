@@ -17,7 +17,7 @@ Debian:
 	Binary: `make deb-pkg`  
 	Source: `make deb-src`  
 CentOS/Fedora specs: support/specs/CentOS-Fedora  
-openSUSE specs: support/specs/openSUSE  
+openSUSE specs: [openSUSE Software](https://software.opensuse.org/package/easy-deauth)
 Arch Linux: [AUR](https://aur.archlinux.org/packages/easy-deauth)  
 Zip archive: `make build-zip`  
 
@@ -25,16 +25,16 @@ Zip archive: `make build-zip`
 Non-package installation: `make install`  
 
 ##### Dependencies  
-Ubuntu/Debian/Raspbian: net-tools aircrack-ng  
-Arch Linux: net-tools aircrack-ng  
-Fedora/CentOS: net-tools aircrack-ng(? on CentOS)  
-openSUSE: net-tools aircrack-ng(?)  
+Ubuntu/Debian/Raspbian: aircrack-ng
+Arch Linux: aircrack-ng
+Fedora/CentOS: aircrack-ng (CentOS: Nux repo)
+openSUSE: aircrack-ng (Packman repo)
 
 ##### Usage
 Standard use: `getnewip`  
 Help: `getnewip -h`  
 
 ##### Notes
-- This has been testing on GNU/Linux distributions: Arch Linux, Debian (9.x), and Ubuntu (16.04, 18.04).  
+- This has been testing on GNU/Linux distributions: Arch Linux, Debian (9.x), openSUSE (Leap 15), and Ubuntu (16.04, 18.04).
 - Building a debian package requires 'build-essential' and 'devscripts'.
 - Main repository is on [GitLab](https://gitlab.com/BobyMCbobs/easy-deauth). There is a [GitHub](https://github.com/BobyMCbobs/easy-deauth) mirror.
