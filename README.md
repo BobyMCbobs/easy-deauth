@@ -1,6 +1,6 @@
 # easy-deauth
 
-#### Release version: 1.1
+#### Release version: 1.2
 
 ##### Description
 Send deauth packages to your favourite devices on your private WiFi network!
