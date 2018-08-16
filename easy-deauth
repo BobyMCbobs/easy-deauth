@@ -42,7 +42,7 @@ fi
 
 if [ ! -f "$HOME/.config/easy-deauth.agree" ]
 then
-	echo "Do you agree to only use this program for research purposes -- Of which only on APs which you own, or at your residence?"
+	echo "Do you agree to only use this program for educational purposes or granted ethical research -- Of which only on APs which you own, at your residence, or with expressed consent by owner(s) of the AP?"
 	echo "NOTE: I am not liable for any thing you do with this software."
 	read -r -p "I [AGREE|DISAGREE]: " agreement
 	agreement=$(echo $agreement | tr [:lower:] [:upper:])
